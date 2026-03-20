@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @font-face {
+    font-family: 'DM Mono';
+    src: url('Fonts/DM_Mono/DMMono-Regular.ttf') format('truetype');
+    font-weight: normal;
+  }
+
+  @font-face {
+    font-family: 'DM Mono';
+    src: url('Fonts/DM_Mono/DMMono-Medium.ttf') format('truetype');
+    font-weight: 500;
+  }
+
+  @font-face {
+    font-family: 'Bree Serif';
+    src: url('Fonts/Bree_Serif/BreeSerif-Regular.ttf') format('truetype');
+    font-weight: normal;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --ink: #1a1410;
+    --accent: #c84b2f;
+    --muted: #8a7d6e;
+    --border: #d4c9b8;
+    --card: #faf7f2;
+  }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 24px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 52px;
+  }
+
+  h1 {
+    font-family: 'Bree Serif', serif;
+    font-weight: normal;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 36px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="url"], input[type="text"] {
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus { border-color: var(--ink); }
+
+  .generate-btn {
+    margin-top: 24px;
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    border-radius: 2px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .generate-btn:hover { background: var(--accent); }
+  .generate-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  .error {
+    margin-top: 14px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    min-height: 1em;
+  }
+
+  .output-section {
+    margin-top: 40px;
+    width: 100%;
+    max-width: 520px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .output-section.visible { display: flex; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .qr-frame {
+    background: white;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    display: inline-block;
+    line-height: 0;
+  }
+
+  .qr-frame canvas, .qr-frame img { display: block; }
+
+  .download-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    padding: 11px 28px;
+    cursor: pointer;
+    color: var(--ink);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .download-btn:hover { background: var(--ink); color: var(--bg); }
+
+  .divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>QR Generator</h1>
+</header>
+
+<div class="card">
+  <!-- URL Panel -->
+  <div class="panel">
+    <label for="url-input">Enter URL</label>
+    <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off" spellcheck="false">
+  </div>
+
+  <button class="generate-btn" id="generate-btn">Generate QR Code</button>
+  <div class="error" id="error-msg"></div>
+</div>
+
+<div class="divider"></div>
+
+<div class="output-section" id="output">
+  <div class="qr-frame" id="qr-container"></div>
+  <a class="download-btn" id="download-btn" download="qr.png">Download PNG</a>
+</div>
+
+<script>
+  // Generate
+  document.getElementById('generate-btn').addEventListener('click', generate);
+
+  function generate() {
+    clearError();
+    const val = document.getElementById('url-input').value.trim();
+    
+    if (!val) return showError('Please enter a URL.');
+    try { new URL(val); } catch { return showError('Please enter a valid URL (include https://).'); }
+
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+
+    try {
+      const qr = new QRCode(container, {
+        text: val,
+        width: 240,
+        height: 240,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L,
+      });
+
+      // Wait for canvas to render then set download link
+      setTimeout(() => {
+        const canvas = container.querySelector('canvas');
+        if (canvas) {
+          document.getElementById('download-btn').href = canvas.toDataURL('image/png');
+        }
+        document.getElementById('output').classList.add('visible');
+      }, 100);
+
+    } catch (e) {
+      showError('Error generating QR code. Try a shorter URL.');
+    }
+  }
+
+  function showError(msg) { document.getElementById('error-msg').textContent = msg; }
+  function clearError() { document.getElementById('error-msg').textContent = ''; }
+</script>
+</body>
+</html>
